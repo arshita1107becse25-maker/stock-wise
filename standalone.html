@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StockWise — Indian Stock Market Portfolio Simulator & Research</title>
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./src/index.css" />
+
+  <!-- React 18 & Babel Standalone for Instant Zero-Dependency Browser Execution -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+</head>
+<body class="light-theme">
+  <div id="root">
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #38bdf8; font-family: -apple-system, sans-serif; font-size: 1.1rem; font-weight: 600;">
+      Loading StockWise Research Platform...
+    </div>
+  </div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ==========================================
+    // 1. DATA: STOCKS & INITIAL PORTFOLIO
+    // ==========================================
+    const MARKET_INDICES = [
+      { symbol: '^NSEI', name: 'NIFTY 50', exchange: 'NSE', value: 24862.45, change: 142.80, changePercent: 0.58 },
+      { symbol: '^BSESN', name: 'SENSEX', exchange: 'BSE', value: 81485.60, change: 418.35, changePercent: 0.52 },
+      { symbol: '^NSEBANK', name: 'NIFTY BANK', exchange: 'NSE', value: 51920.10, change: -68.40, changePercent: -0.13 },
+      { symbol: '^NSEIT', name: 'NIFTY IT', exchange: 'NSE', value: 42180.75, change: 485.20, changePercent: 1.16 }
+    ];
+
+    const STOCKS = [
+      {
+        symbol: 'RELIANCE', name: 'Reliance Industries Ltd.', exchange: 'NSE', sector: 'Energy & Petrochemicals',
+        price: 2945.50, change: 32.40, changePercent: 1.11, marketCap: '₹19,92,450 Cr', peRatio: 28.4,
+        eps: 103.71, divYield: 0.34, high52: 3217.90, low52: 2221.05,
+        description: "Reliance Industries is India's largest private sector enterprise spanning energy, petrochemicals, retail, digital telecom (Jio), and renewable initiatives."
+      },
+      {
+        symbol: 'TCS', name: 'Tata Consultancy Services', exchange: 'NSE', sector: 'Technology',
+        price: 3880.20, change: -40.10, changePercent: -1.02, marketCap: '₹14,03,800 Cr', peRatio: 29.8,
+        eps: 130.21, divYield: 1.29, high52: 4585.90, low52: 3313.00,
+        description: 'TCS is a global leader in IT services, consulting, and business solutions with an expansive global delivery footprint.'
+      },
+      {
+        symbol: 'INFY', name: 'Infosys Limited', exchange: 'NSE', sector: 'Technology',
+        price: 1825.40, change: 22.80, changePercent: 1.26, marketCap: '₹7,58,900 Cr', peRatio: 28.1,
+        eps: 64.96, divYield: 2.19, high52: 1991.45, low52: 1358.35,
+        description: 'Infosys is an Indian multinational digital services powerhouse empowering clients across 56 countries in AI, cloud, and digital transformation.'
+      },
+      {
+        symbol: 'HDFCBANK', name: 'HDFC Bank Limited', exchange: 'NSE', sector: 'Banking & Finance',
+        price: 1680.10, change: 14.50, changePercent: 0.87, marketCap: '₹12,78,400 Cr', peRatio: 19.4,
+        eps: 86.60, divYield: 1.16, high52: 1794.00, low52: 1363.55,
+        description: "India's largest private sector bank by assets, serving over 100 million retail and corporate customers nationwide."
+      },
+      {
+        symbol: 'ICICIBANK', name: 'ICICI Bank Limited', exchange: 'NSE', sector: 'Banking & Finance',
+        price: 1225.60, change: 18.20, changePercent: 1.51, marketCap: '₹8,61,200 Cr', peRatio: 18.2,
+        eps: 67.34, divYield: 0.82, high52: 1300.90, low52: 914.00,
+        description: 'A diversified financial services group offering retail banking, corporate banking, asset management, and digital credit.'
+      },
+      {
+        symbol: 'SBIN', name: 'State Bank of India', exchange: 'NSE', sector: 'Banking & Finance',
+        price: 815.30, change: -6.40, changePercent: -0.78, marketCap: '₹7,27,600 Cr', peRatio: 10.9,
+        eps: 74.80, divYield: 1.68, high52: 912.00, low52: 555.00,
+        description: "India's largest public sector lender, commanding over one-quarter of total deposits and loan disbursements in India."
+      },
+      {
+        symbol: 'LT', name: 'Larsen & Toubro Ltd.', exchange: 'NSE', sector: 'Infrastructure',
+        price: 3560.00, change: 48.70, changePercent: 1.39, marketCap: '₹4,89,500 Cr', peRatio: 37.5,
+        eps: 94.93, divYield: 0.96, high52: 3919.90, low52: 2871.20,
+        description: 'An Indian multinational conglomerate engaged in EPC projects, hi-tech manufacturing, defense, and power infrastructure.'
+      },
+      {
+        symbol: 'TATAMOTORS', name: 'Tata Motors Limited', exchange: 'NSE', sector: 'Automotive',
+        price: 975.80, change: -12.30, changePercent: -1.25, marketCap: '₹3,58,900 Cr', peRatio: 11.2,
+        eps: 87.12, divYield: 0.61, high52: 1179.05, low52: 622.00,
+        description: 'Leading automobile manufacturer producing commercial vehicles, passenger EVs, and luxury Jaguar Land Rover cars.'
+      },
+      {
+        symbol: 'BHARTIARTL', name: 'Bharti Airtel Limited', exchange: 'NSE', sector: 'Telecommunications',
+        price: 1540.25, change: 26.50, changePercent: 1.75, marketCap: '₹9,22,100 Cr', peRatio: 68.4,
+        eps: 22.52, divYield: 0.52, high52: 1712.00, low52: 898.00,
+        description: 'Top Indian telecommunications provider offering 5G wireless broadband, enterprise cloud, and digital services across India and Africa.'
+      },
+      {
+        symbol: 'ITC', name: 'ITC Limited', exchange: 'NSE', sector: 'FMCG',
+        price: 495.10, change: 3.20, changePercent: 0.65, marketCap: '₹6,18,300 Cr', peRatio: 29.5,
+        eps: 16.78, divYield: 2.78, high52: 528.55, low52: 399.30,
+        description: 'Leading FMCG conglomerate spanning packaged foods, personal care, branded apparel, paperboards, hotels, and agribusiness.'
+      },
+      {
+        symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical Industries', exchange: 'NSE', sector: 'Healthcare',
+        price: 1840.00, change: 16.40, changePercent: 0.90, marketCap: '₹4,41,500 Cr', peRatio: 42.1,
+        eps: 43.71, divYield: 0.73, high52: 1960.00, low52: 1078.00,
+        description: "India's largest pharmaceutical company and top global generic specialty medicines manufacturer."
+      },
+      {
+        symbol: 'BAJFINANCE', name: 'Bajaj Finance Limited', exchange: 'NSE', sector: 'Banking & Finance',
+        price: 7120.00, change: -85.00, changePercent: -1.18, marketCap: '₹4,40,200 Cr', peRatio: 30.6,
+        eps: 232.68, divYield: 0.51, high52: 8192.00, low52: 6375.00,
+        description: 'India\'s prominent non-banking financial company (NBFC) specializing in consumer lending, digital payments, and SME loans.'
+      }
+    ];
+
+    const STOCK_MAP = Object.fromEntries(STOCKS.map(s => [s.symbol, s]));
+
+    const INITIAL_PORTFOLIO = {
+      cashBalance: 24675.00,
+      initialCapital: 100000.00,
+      realizedProfitLoss: 1850.00,
+      holdings: [
+        { symbol: 'RELIANCE', name: 'Reliance Industries Ltd.', shares: 10, avgPurchasePrice: 2850.00, totalCostBasis: 28500.00 },
+        { symbol: 'TCS', name: 'Tata Consultancy Services', shares: 5, avgPurchasePrice: 3920.00, totalCostBasis: 19600.00 },
+        { symbol: 'HDFCBANK', name: 'HDFC Bank Limited', shares: 15, avgPurchasePrice: 1640.00, totalCostBasis: 24600.00 },
+        { symbol: 'ICICIBANK', name: 'ICICI Bank Limited', shares: 8, avgPurchasePrice: 1180.00, totalCostBasis: 9440.00 }
+      ],
+      transactions: [
+        { id: 'TXN-90214', date: '2026-10-25T10:15:00.000Z', symbol: 'RELIANCE', name: 'Reliance Industries Ltd.', type: 'BUY', shares: 10, price: 2850.00, fees: 20.00, totalAmount: 28520.00, status: 'EXECUTED' },
+        { id: 'TXN-88412', date: '2026-10-24T11:45:00.000Z', symbol: 'TCS', name: 'Tata Consultancy Services', type: 'BUY', shares: 5, price: 3920.00, fees: 20.00, totalAmount: 19620.00, status: 'EXECUTED' },
+        { id: 'TXN-74125', date: '2026-10-22T09:30:00.000Z', symbol: 'HDFCBANK', name: 'HDFC Bank Limited', type: 'BUY', shares: 15, price: 1640.00, fees: 20.00, totalAmount: 24620.00, status: 'EXECUTED' },
+        { id: 'TXN-63219', date: '2026-10-20T14:10:00.000Z', symbol: 'ICICIBANK', name: 'ICICI Bank Limited', type: 'BUY', shares: 8, price: 1180.00, fees: 20.00, totalAmount: 9460.00, status: 'EXECUTED' },
+        { id: 'TXN-51203', date: '2026-10-18T12:00:00.000Z', symbol: 'INFY', name: 'Infosys Limited', type: 'SELL', shares: 10, price: 1840.00, fees: 20.00, totalAmount: 18380.00, realizedGain: 1850.00, status: 'EXECUTED' }
+      ],
+      watchlist: ['RELIANCE', 'TCS', 'INFY', 'TATAMOTORS', 'BHARTIARTL']
+    };
+
+    const INVESTMENT_TIPS = [
+      {
+        id: 'tip-1',
+        title: 'Rule of Asset Allocation',
+        category: 'Risk Management',
+        tagline: 'Never put all your eggs in one basket',
+        tip: 'Spread capital across uncorrelated sectors like Technology, Banking, FMCG, and Healthcare.',
+        practicalTakeaway: 'No single stock should exceed 15-20% of your total equity.'
+      },
+      {
+        id: 'tip-2',
+        title: 'Understanding P/E Ratios',
+        category: 'Valuation',
+        tagline: 'Price is what you pay, value is what you get',
+        tip: 'The Price-to-Earnings (P/E) ratio shows how much investors pay per rupee of annual earnings.',
+        practicalTakeaway: 'Compare a company\'s P/E to its historical 5-year average and industry peers.'
+      },
+      {
+        id: 'tip-3',
+        title: 'Power of Rupee-Cost Averaging',
+        category: 'SIP & Compounding',
+        tagline: 'Discipline beats market timing',
+        tip: 'Systematic investing lowers average entry price across market volatility.',
+        practicalTakeaway: 'Weighted average price cushions you during pullbacks.'
+      },
+      {
+        id: 'tip-4',
+        title: 'Investor Psychology & FOMO',
+        category: 'Behavioral Finance',
+        tagline: 'Be fearful when others are greedy',
+        tip: 'Chasing parabolic green candles often results in buying cyclical market tops.',
+        practicalTakeaway: 'Always define target entry and exit criteria before ordering.'
+      }
+    ];
+
+    const LEARNING_ARTICLES = [
+      {
+        id: 'art-1',
+        title: 'Introduction to Equity Valuation & P/E Multiples',
+        category: 'Valuation',
+        readTime: '4 min read',
+        difficulty: 'Beginner',
+        summary: 'Learn how institutional analysts calculate trailing and forward price-to-earnings multiples to spot undervalued equities on the NSE/BSE.',
+        sections: [
+          { heading: 'What is P/E Ratio?', content: 'The Price-to-Earnings ratio divides current stock price by earnings per share (EPS). A lower P/E may signify an undervalued bargain, whereas a high P/E implies premium growth expectations.' },
+          { heading: 'Sector Comparison Rule', content: 'Never compare a banking P/E with an IT services P/E. Always benchmark a stock against its direct sector peers.' }
+        ]
+      },
+      {
+        id: 'art-2',
+        title: 'Building a Resilient Portfolio via Sector Diversification',
+        category: 'Portfolio Construction',
+        readTime: '6 min read',
+        difficulty: 'Intermediate',
+        summary: 'Examine how balancing cyclical stocks (Automotive, Energy) with defensive stocks (FMCG, Pharma) minimizes drawdowns.',
+        sections: [
+          { heading: 'The Danger of Tech Overweighting', content: 'If tech firms drop 15% due to global spending cuts, owning FMCG holdings cushions the net portfolio equity.' },
+          { heading: 'Target Allocations', content: 'Aim for 4 to 6 diverse industries with cash reserves between 10% and 15% for buying dips.' }
+        ]
+      },
+      {
+        id: 'art-3',
+        title: 'Weighted-Average Cost Basis Explained for Indian Equities',
+        category: 'Accounting',
+        readTime: '5 min read',
+        difficulty: 'Beginner',
+        summary: 'Step-by-step mathematical breakdown of how buying dips alters your effective average purchase price.',
+        sections: [
+          { heading: 'The Formula', content: 'New Average Price = [(Old Shares × Old Price) + (New Shares × Buy Price)] / Total Shares. This is the exact formula used by Indian brokerages.' },
+          { heading: 'Realized vs Unrealized Gains', content: 'Gains remain unrealized (paper gains) until shares are liquidated into cash, locking in Realized P&L.' }
+        ]
+      }
+    ];
+
+    // ==========================================
+    // 2. FINANCIAL CALCULATIONS & FORMATTING
+    // ==========================================
+    function calculateHoldingsValue(holdings, stockMap) {
+      return holdings.reduce((sum, h) => {
+        const s = stockMap[h.symbol] || { price: h.avgPurchasePrice };
+        return sum + (h.shares * s.price);
+      }, 0);
+    }
+
+    function calculateTotalInvested(holdings) {
+      return holdings.reduce((sum, h) => sum + (h.totalCostBasis || (h.shares * h.avgPurchasePrice)), 0);
+    }
+
+    function calculateAssetAllocation(holdings, stockMap, cash) {
+      const sectorTotals = {};
+      let totalHoldingsVal = 0;
+
+      holdings.forEach(h => {
+        const s = stockMap[h.symbol] || { sector: 'Other', price: h.avgPurchasePrice };
+        const val = h.shares * s.price;
+        const sec = s.sector || 'Other';
+        sectorTotals[sec] = (sectorTotals[sec] || 0) + val;
+        totalHoldingsVal += val;
+      });
+
+      const totalEquity = totalHoldingsVal + cash;
+      if (totalEquity <= 0) return [];
+
+      const colors = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#0284c7', '#dc2626'];
+      const result = [];
+      let cIdx = 0;
+
+      for (const [sec, amt] of Object.entries(sectorTotals)) {
+        result.push({
+          name: sec,
+          amount: amt,
+          percentage: Number(((amt / totalEquity) * 100).toFixed(1)),
+          color: colors[cIdx % colors.length]
+        });
+        cIdx++;
+      }
+
+      if (cash > 0) {
+        result.push({
+          name: 'Cash Reserves',
+          amount: cash,
+          percentage: Number(((cash / totalEquity) * 100).toFixed(1)),
+          color: '#64748b'
+        });
+      }
+
+      return result.sort((a, b) => b.amount - a.amount);
+    }
+
+    function formatCurrency(amount, currency = 'INR') {
+      const num = Number(amount) || 0;
+      if (currency === 'USD') {
+        const usdVal = num / 83.5;
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(usdVal);
+      }
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(num);
+    }
+
+    function formatPercent(val) {
+      const num = Number(val) || 0;
+      return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
+    }
+
+    function formatDate(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getMarketStatus() {
+      const now = new Date();
+      const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+      const istDate = new Date(istString);
+      const day = istDate.getDay();
+      const hour = istDate.getHours();
+      const min = istDate.getMinutes();
+      const currentMin = hour * 60 + min;
+
+      const isWeekday = day >= 1 && day <= 5;
+      const isOpen = isWeekday && currentMin >= (9 * 60 + 15) && currentMin <= (15 * 60 + 30);
+
+      return {
+        isOpen,
+        label: isOpen ? 'Market Open (09:15 - 15:30 IST)' : 'Market Closed (Opens 09:15 IST)',
+        note: 'National Stock Exchange (NSE) standard trading hours'
+      };
+    }
+
+    // ==========================================
+    // 3. MAIN APP ROOT COMPONENT
+    // ==========================================
+    function App() {
+      // Preferences
+      const [theme, setTheme] = useState(() => localStorage.getItem('stockwise_theme') || 'light');
+      const [currency, setCurrency] = useState(() => localStorage.getItem('stockwise_currency') || 'INR');
+      const [currentPage, setCurrentPage] = useState('dashboard');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+      // Portfolio State
+      const [portfolio, setPortfolio] = useState(() => {
+        try {
+          const saved = localStorage.getItem('stockwise_portfolio');
+          if (saved) {
+            const p = JSON.parse(saved);
+            if (p && typeof p.cashBalance === 'number') return p;
+          }
+        } catch(e) {}
+        return INITIAL_PORTFOLIO;
+      });
+
+      // Trade & Comparison Modals
+      const [tradeModal, setTradeModal] = useState({ isOpen: false, mode: 'BUY', stock: null });
+      const [detailStock, setDetailStock] = useState(null);
+      const [compareModalOpen, setCompareModalOpen] = useState(false);
+      const [compareSymbols, setCompareSymbols] = useState(['RELIANCE', 'TCS', 'HDFCBANK']);
+      const [resetModal, setResetModal] = useState(null);
+      const [toasts, setToasts] = useState([]);
+
+      const addToast = (type, title, message) => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, type, title, message }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+      };
+
+      // Sync theme with body
+      useEffect(() => {
+        document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+        localStorage.setItem('stockwise_theme', theme);
+      }, [theme]);
+
+      useEffect(() => {
+        localStorage.setItem('stockwise_currency', currency);
+      }, [currency]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('stockwise_portfolio', JSON.stringify(portfolio));
+        } catch(e) {}
+      }, [portfolio]);
+
+      // Financial Metrics
+      const holdings = portfolio.holdings || [];
+      const cashBalance = portfolio.cashBalance || 0;
+      const initialCapital = portfolio.initialCapital || 100000;
+      const transactions = portfolio.transactions || [];
+      const watchlist = portfolio.watchlist || [];
+      const realizedProfitLoss = portfolio.realizedProfitLoss || 0;
+
+      const holdingsMap = useMemo(() => Object.fromEntries(holdings.map(h => [h.symbol, h])), [holdings]);
+      const totalHoldingsValue = useMemo(() => calculateHoldingsValue(holdings, STOCK_MAP), [holdings]);
+      const totalInvested = useMemo(() => calculateTotalInvested(holdings), [holdings]);
+      const totalEquity = cashBalance + totalHoldingsValue;
+      const unrealizedPL = totalHoldingsValue - totalInvested;
+      const overallReturnPct = initialCapital > 0 ? ((totalEquity - initialCapital) / initialCapital) * 100 : 0;
+      const market = getMarketStatus();
+
+      // BUY Order Execution
+      const handleExecuteBuy = (stock, shares) => {
+        const fee = 20.00;
+        const cost = (shares * stock.price) + fee;
+
+        if (cost > cashBalance) {
+          addToast('error', 'Insufficient Cash', 'You do not have enough cash to complete this purchase.');
+          return;
+        }
+
+        const newCash = Number((cashBalance - cost).toFixed(2));
+        let updatedHoldings = [...holdings];
+        const existingIndex = updatedHoldings.findIndex(h => h.symbol === stock.symbol);
+
+        if (existingIndex >= 0) {
+          const ex = updatedHoldings[existingIndex];
+          const newTotalShares = ex.shares + shares;
+          const newAvgPrice = ((ex.shares * ex.avgPurchasePrice) + (shares * stock.price)) / newTotalShares;
+          updatedHoldings[existingIndex] = {
+            ...ex,
+            shares: newTotalShares,
+            avgPurchasePrice: Number(newAvgPrice.toFixed(2)),
+            totalCostBasis: Number((newTotalShares * newAvgPrice).toFixed(2))
+          };
+        } else {
+          updatedHoldings.push({
+            symbol: stock.symbol,
+            name: stock.name,
+            shares,
+            avgPurchasePrice: stock.price,
+            totalCostBasis: Number((shares * stock.price).toFixed(2))
+          });
+        }
+
+        const newTransaction = {
+          id: `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+          date: new Date().toISOString(),
+          symbol: stock.symbol,
+          name: stock.name,
+          type: 'BUY',
+          shares,
+          price: stock.price,
+          fees: fee,
+          totalAmount: cost,
+          status: 'EXECUTED'
+        };
+
+        setPortfolio({
+          ...portfolio,
+          cashBalance: newCash,
+          holdings: updatedHoldings,
+          transactions: [newTransaction, ...transactions]
+        });
+
+        addToast('success', 'Order Executed', `Purchased ${shares} shares of ${stock.symbol}.`);
+        setTradeModal({ isOpen: false, mode: 'BUY', stock: null });
+      };
+
+      // SELL Order Execution
+      const handleExecuteSell = (stock, shares) => {
+        const fee = 20.00;
+        const grossProceeds = shares * stock.price;
+        const netProceeds = Math.max(0, grossProceeds - fee);
+
+        const existingIndex = holdings.findIndex(h => h.symbol === stock.symbol);
+        if (existingIndex < 0 || holdings[existingIndex].shares < shares) {
+          addToast('error', 'Invalid Sell Order', 'You cannot sell more shares than you own.');
+          return;
+        }
+
+        const ex = holdings[existingIndex];
+        const realizedGain = (shares * (stock.price - ex.avgPurchasePrice)) - fee;
+        const newCash = Number((cashBalance + netProceeds).toFixed(2));
+        const newRealizedPL = Number((realizedProfitLoss + realizedGain).toFixed(2));
+
+        let updatedHoldings = [...holdings];
+        const remainingShares = ex.shares - shares;
+
+        if (remainingShares === 0) {
+          updatedHoldings.splice(existingIndex, 1);
+        } else {
+          updatedHoldings[existingIndex] = {
+            ...ex,
+            shares: remainingShares,
+            totalCostBasis: Number((remainingShares * ex.avgPurchasePrice).toFixed(2))
+          };
+        }
+
+        const newTransaction = {
+          id: `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+          date: new Date().toISOString(),
+          symbol: stock.symbol,
+          name: stock.name,
+          type: 'SELL',
+          shares,
+          price: stock.price,
+          fees: fee,
+          totalAmount: netProceeds,
+          realizedGain: Number(realizedGain.toFixed(2)),
+          status: 'EXECUTED'
+        };
+
+        setPortfolio({
+          ...portfolio,
+          cashBalance: newCash,
+          realizedProfitLoss: newRealizedPL,
+          holdings: updatedHoldings,
+          transactions: [newTransaction, ...transactions]
+        });
+
+        addToast('success', 'Order Executed', `Sold ${shares} shares of ${stock.symbol}. Realized P&L: ₹${realizedGain.toFixed(2)}.`);
+        setTradeModal({ isOpen: false, mode: 'SELL', stock: null });
+      };
+
+      const handleToggleWatchlist = (symbol) => {
+        const isPresent = watchlist.includes(symbol);
+        const updated = isPresent ? watchlist.filter(s => s !== symbol) : [...watchlist, symbol];
+        setPortfolio({ ...portfolio, watchlist: updated });
+        addToast('info', isPresent ? 'Removed from Watchlist' : 'Saved to Watchlist', `${symbol} updated.`);
+      };
+
+      // Export CSV
+      const exportCSV = (data, filename, isTransactions = true) => {
+        if (!data || data.length === 0) { alert('No data to export.'); return; }
+        let headers, rows;
+        if (isTransactions) {
+          headers = ['Transaction ID', 'Date', 'Symbol', 'Company', 'Type', 'Shares', 'Price', 'Fees', 'Total Amount', 'Status'];
+          rows = data.map(t => [t.id, t.date, t.symbol, `"${t.name}"`, t.type, t.shares, t.price, t.fees, t.totalAmount, t.status]);
+        } else {
+          headers = ['Symbol', 'Company', 'Shares', 'Avg Buy Price', 'Current Price', 'Invested', 'Current Value', 'Unrealized PL'];
+          rows = data.map(h => {
+            const s = STOCK_MAP[h.symbol] || { price: h.avgPurchasePrice };
+            const v = h.shares * s.price;
+            const inv = h.totalCostBasis || (h.shares * h.avgPurchasePrice);
+            return [h.symbol, `"${h.name}"`, h.shares, h.avgPurchasePrice, s.price, inv, v, v - inv];
+          });
+        }
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+      };
+
+      return (
+        <div className="site-wrapper">
+          {/* 1. TOP MARKET TICKER STRIP */}
+          <div className="top-ticker-bar">
+            <div className="ticker-label">
+              <span className="ticker-badge">SIMULATED DATA</span>
+            </div>
+            <div className="ticker-scroll-container">
+              <div className="ticker-track">
+                {MARKET_INDICES.map(idx => (
+                  <div key={idx.symbol} className="ticker-item">
+                    <span className="ticker-symbol">{idx.name}</span>
+                    <span className="ticker-price">{idx.value.toLocaleString('en-IN')}</span>
+                    <span className={`ticker-change ${idx.change >= 0 ? 'ticker-pos' : 'ticker-neg'}`}>
+                      {formatPercent(idx.changePercent)}
+                    </span>
+                  </div>
+                ))}
+                {STOCKS.slice(0, 8).map(stk => (
+                  <div
+                    key={stk.symbol}
+                    className="ticker-item ticker-item-clickable"
+                    onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: stk })}
+                    title={`Click to buy ${stk.symbol}`}
+                  >
+                    <span className="ticker-symbol">{stk.symbol}</span>
+                    <span className="ticker-price">{formatCurrency(stk.price, currency)}</span>
+                    <span className={`ticker-change ${stk.change >= 0 ? 'ticker-pos' : 'ticker-neg'}`}>
+                      {formatPercent(stk.changePercent)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. MAIN HORIZONTAL NAVIGATION HEADER */}
+          <header className="site-header">
+            <div className="header-inner">
+              <div className="header-brand" onClick={() => { setCurrentPage('dashboard'); window.scrollTo(0,0); }}>
+                <div className="brand-icon">₹</div>
+                <div className="brand-text">
+                  <span className="brand-name">StockWise</span>
+                  <span className="brand-tagline">FINANCIAL SIMULATOR</span>
+                </div>
+              </div>
+
+              <div className="header-search-wrap">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search Indian stocks (e.g. RELIANCE, TCS)..."
+                  value={searchQuery}
+                  onChange={e => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value && currentPage !== 'explore') setCurrentPage('explore');
+                  }}
+                />
+              </div>
+
+              <nav className="header-nav">
+                {[
+                  { id: 'dashboard', label: 'Dashboard' },
+                  { id: 'portfolio', label: 'Portfolio', badge: holdings.length || null },
+                  { id: 'explore', label: 'Explore Stocks', badge: watchlist.length || null },
+                  { id: 'insights', label: 'Insights & Tips' },
+                  { id: 'transactions', label: 'Transactions', badge: transactions.length || null },
+                  { id: 'settings', label: 'Settings' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setCurrentPage(tab.id); setMobileMenuOpen(false); window.scrollTo(0,0); }}
+                    className={`nav-link ${currentPage === tab.id ? 'active' : ''}`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.badge && <span className="nav-badge">{tab.badge}</span>}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="header-actions">
+                <div className={`market-status-pill ${market.isOpen ? 'market-open' : 'market-closed'}`}>
+                  <span className="status-dot" />
+                  <span className="status-text">NSE: {market.isOpen ? 'OPEN' : 'CLOSED'}</span>
+                </div>
+
+                <button onClick={() => setCurrency(currency === 'INR' ? 'USD' : 'INR')} className="ctrl-btn">
+                  {currency === 'INR' ? '₹ INR' : '$ USD'}
+                </button>
+
+                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="ctrl-btn">
+                  {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+                </button>
+
+                <div className="user-profile-pill" onClick={() => setCurrentPage('settings')}>
+                  <div className="user-avatar">AS</div>
+                  <span className="user-name">Alex</span>
+                </div>
+
+                <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                  {mobileMenuOpen ? '✕' : '☰'}
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Navigation Drawer */}
+            {mobileMenuOpen && (
+              <div className="mobile-nav-drawer">
+                {[
+                  { id: 'dashboard', label: 'Dashboard' },
+                  { id: 'portfolio', label: 'Portfolio', badge: holdings.length || null },
+                  { id: 'explore', label: 'Explore Stocks', badge: watchlist.length || null },
+                  { id: 'insights', label: 'Insights & Tips' },
+                  { id: 'transactions', label: 'Transactions', badge: transactions.length || null },
+                  { id: 'settings', label: 'Settings' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setCurrentPage(tab.id); setMobileMenuOpen(false); }}
+                    className={`mobile-nav-link ${currentPage === tab.id ? 'active' : ''}`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.badge && <span className="nav-badge">{tab.badge}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </header>
+
+          {/* 3. MAIN WORKSPACE CONTENT */}
+          <main className="main-content">
+            {/* PAGE 1: DASHBOARD */}
+            {currentPage === 'dashboard' && (
+              <div className="page-content">
+                {/* Market Overview Strip */}
+                <div className="market-overview-strip">
+                  <div className="market-overview-header">
+                    <span className="overview-title">MARKET OVERVIEW</span>
+                    <span className="overview-sub">NSE / BSE BENCHMARKS</span>
+                  </div>
+                  <div className="market-index-grid">
+                    {MARKET_INDICES.map(idx => {
+                      const isPos = idx.change >= 0;
+                      return (
+                        <div key={idx.symbol} className="index-card">
+                          <div className="index-card-top">
+                            <span className="index-name">{idx.name}</span>
+                            <span className={`index-delta-badge ${isPos ? 'delta-pos' : 'delta-neg'}`}>
+                              {isPos ? '▲ +' : '▼ '}{formatPercent(idx.changePercent)}
+                            </span>
+                          </div>
+                          <div className="index-card-bottom">
+                            <span className="index-points">{idx.value.toLocaleString('en-IN')}</span>
+                            <span className={`index-change ${isPos ? 'text-pos' : 'text-neg'}`}>
+                              {isPos ? '+' : ''}{idx.change.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Section Header */}
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">PORTFOLIO SUMMARY</h2>
+                    <span className="section-sub">Real-time simulation value & capital reserves</span>
+                  </div>
+                  <div className="section-actions">
+                    <button onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: STOCKS[0] })} className="btn-primary btn-sm">
+                      + Buy Stock
+                    </button>
+                    <button
+                      onClick={() => setTradeModal({ isOpen: true, mode: 'SELL', stock: holdings[0] ? STOCK_MAP[holdings[0].symbol] : STOCKS[0] })}
+                      className="btn-secondary btn-sm"
+                      disabled={holdings.length === 0}
+                    >
+                      Sell Shares
+                    </button>
+                    <button onClick={() => setCurrentPage('explore')} className="btn-secondary btn-sm">
+                      Stock Screener →
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5-Metric Strip */}
+                <div className="stat-grid-5">
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <span className="stat-title">Total Portfolio Value</span>
+                      <span className="stat-sub">Equity + Cash</span>
+                    </div>
+                    <div className="stat-card-body">
+                      <div className="stat-value">{formatCurrency(totalEquity, currency)}</div>
+                      <span className={`stat-delta ${overallReturnPct >= 0 ? 'delta-pos' : 'delta-neg'}`}>
+                        {overallReturnPct >= 0 ? '▲ +' : '▼ '}{formatPercent(overallReturnPct)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <span className="stat-title">Available Cash</span>
+                      <span className="stat-sub">Ready to Deploy</span>
+                    </div>
+                    <div className="stat-card-body">
+                      <div className="stat-value">{formatCurrency(cashBalance, currency)}</div>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <span className="stat-title">Total Invested</span>
+                      <span className="stat-sub">{holdings.length} Active Positions</span>
+                    </div>
+                    <div className="stat-card-body">
+                      <div className="stat-value">{formatCurrency(totalInvested, currency)}</div>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <span className="stat-title">Unrealized P&L</span>
+                      <span className="stat-sub">Mark-to-Market</span>
+                    </div>
+                    <div className="stat-card-body">
+                      <div className="stat-value" style={{ color: unrealizedPL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
+                        {unrealizedPL >= 0 ? '+' : ''}{formatCurrency(unrealizedPL, currency)}
+                      </div>
+                      <span className={`stat-delta ${unrealizedPL >= 0 ? 'delta-pos' : 'delta-neg'}`}>
+                        {formatPercent(totalInvested > 0 ? (unrealizedPL / totalInvested) * 100 : 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <span className="stat-title">Portfolio Return</span>
+                      <span className="stat-sub">vs ₹1,00,000 Initial</span>
+                    </div>
+                    <div className="stat-card-body">
+                      <div className="stat-value">{formatPercent(overallReturnPct)}</div>
+                      <span className={`stat-delta ${overallReturnPct >= 0 ? 'delta-pos' : 'delta-neg'}`}>
+                        {overallReturnPct >= 0 ? '▲ +' : '▼ '}{formatPercent(overallReturnPct)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashboard Grid: Holdings & Sector Split */}
+                <div className="dashboard-grid">
+                  <div className="panel holdings-panel">
+                    <div className="panel-header">
+                      <div>
+                        <h3 className="panel-title">PORTFOLIO HOLDINGS</h3>
+                        <span className="panel-sub">{holdings.length} active positions in Indian equities</span>
+                      </div>
+                      <button onClick={() => setCurrentPage('portfolio')} className="panel-link">
+                        View Detailed Portfolio →
+                      </button>
+                    </div>
+
+                    {holdings.length > 0 ? (
+                      <div className="table-responsive">
+                        <table className="financial-table">
+                          <thead>
+                            <tr>
+                              <th>COMPANY & TICKER</th>
+                              <th style={{ textAlign: 'right' }}>SHARES</th>
+                              <th style={{ textAlign: 'right' }}>AVG BUY</th>
+                              <th style={{ textAlign: 'right' }}>CURRENT</th>
+                              <th style={{ textAlign: 'right' }}>CURRENT VALUE</th>
+                              <th style={{ textAlign: 'right' }}>UNREALIZED P&L</th>
+                              <th style={{ textAlign: 'center', width: '120px' }}>ACTION</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {holdings.map(h => {
+                              const s = STOCK_MAP[h.symbol] || { price: h.avgPurchasePrice };
+                              const val = h.shares * s.price;
+                              const inv = h.totalCostBasis || (h.shares * h.avgPurchasePrice);
+                              const pl = val - inv;
+                              const plPct = inv > 0 ? (pl / inv) * 100 : 0;
+                              const isPos = pl >= 0;
+
+                              return (
+                                <tr key={h.symbol} className="table-row-hover">
+                                  <td>
+                                    <div className="symbol-cell">
+                                      <span className="stock-ticker">{h.symbol}</span>
+                                      <span className="stock-company-name">{h.name}</span>
+                                    </div>
+                                  </td>
+                                  <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{h.shares}</td>
+                                  <td style={{ textAlign: 'right' }} className="tabular-num text-secondary">{formatCurrency(h.avgPurchasePrice, currency)}</td>
+                                  <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{formatCurrency(s.price, currency)}</td>
+                                  <td style={{ textAlign: 'right' }} className="tabular-num font-bold">{formatCurrency(val, currency)}</td>
+                                  <td style={{ textAlign: 'right' }}>
+                                    <span className={`delta-tag ${isPos ? 'delta-pos' : 'delta-neg'}`}>
+                                      {isPos ? '+' : ''}{formatCurrency(pl, currency)} ({formatPercent(plPct)})
+                                    </span>
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    <div className="table-actions">
+                                      <button onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: s })} className="btn-action btn-buy">Buy</button>
+                                      <button onClick={() => setTradeModal({ isOpen: true, mode: 'SELL', stock: s })} className="btn-action btn-sell">Sell</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="empty-panel">
+                        <p>No active stock holdings in your portfolio.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="panel allocation-panel">
+                    <div className="panel-header">
+                      <div>
+                        <h3 className="panel-title">SECTOR ALLOCATION</h3>
+                        <span className="panel-sub">Asset distribution across sectors</span>
+                      </div>
+                    </div>
+
+                    <div className="allocation-list">
+                      {calculateAssetAllocation(holdings, STOCK_MAP, cashBalance).map((item, idx) => (
+                        <div key={idx} className="allocation-item">
+                          <div className="allocation-labels">
+                            <span className="allocation-name">
+                              <span className="allocation-color-dot" style={{ backgroundColor: item.color }} />
+                              {item.name}
+                            </span>
+                            <span className="allocation-value tabular-num">
+                              {item.percentage}% ({formatCurrency(item.amount, currency)})
+                            </span>
+                          </div>
+                          <div className="allocation-progress-track">
+                            <div className="allocation-progress-bar" style={{ width: `${item.percentage}%`, backgroundColor: item.color }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="market-movers-box">
+                      <span className="sub-heading">TOP ACTIVE EQUITIES</span>
+                      <div className="mini-ticker-list">
+                        {STOCKS.slice(0, 4).map(stk => (
+                          <div
+                            key={stk.symbol}
+                            className="mini-ticker-row"
+                            onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: stk })}
+                          >
+                            <div>
+                              <span className="mini-ticker-sym">{stk.symbol}</span>
+                              <span className="mini-ticker-sec">{stk.sector}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div className="tabular-num font-semibold">{formatCurrency(stk.price, currency)}</div>
+                              <span className={`text-xs ${stk.change >= 0 ? 'text-pos' : 'text-neg'}`}>
+                                {formatPercent(stk.changePercent)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 2: PORTFOLIO */}
+            {currentPage === 'portfolio' && (
+              <div className="page-content">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">PORTFOLIO HOLDINGS & LEDGER</h2>
+                    <span className="section-sub">Weighted-average purchase prices, positions, and profit/loss</span>
+                  </div>
+                  <div className="section-actions">
+                    <button onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: STOCKS[0] })} className="btn-primary btn-sm">+ Buy Stock</button>
+                    <button onClick={() => exportCSV(holdings, `stockwise_holdings_${new Date().toISOString().split('T')[0]}.csv`, false)} className="btn-secondary btn-sm" disabled={holdings.length === 0}>
+                      Export Holdings (CSV)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="stat-grid-5">
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Total Portfolio Value</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{formatCurrency(totalEquity, currency)}</div></div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Total Cost Basis</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{formatCurrency(totalInvested, currency)}</div></div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Unrealized P&L</span></div>
+                    <div className="stat-card-body">
+                      <div className="stat-value" style={{ color: unrealizedPL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
+                        {unrealizedPL >= 0 ? '+' : ''}{formatCurrency(unrealizedPL, currency)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Realized P&L</span></div>
+                    <div className="stat-card-body">
+                      <div className="stat-value" style={{ color: realizedProfitLoss >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
+                        {realizedProfitLoss >= 0 ? '+' : ''}{formatCurrency(realizedProfitLoss, currency)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Available Cash</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{formatCurrency(cashBalance, currency)}</div></div>
+                  </div>
+                </div>
+
+                <div className="panel">
+                  {holdings.length > 0 ? (
+                    <div className="table-responsive">
+                      <table className="financial-table">
+                        <thead>
+                          <tr>
+                            <th>COMPANY & TICKER</th>
+                            <th style={{ textAlign: 'right' }}>SHARES</th>
+                            <th style={{ textAlign: 'right' }}>AVG BUY PRICE</th>
+                            <th style={{ textAlign: 'right' }}>CURRENT PRICE</th>
+                            <th style={{ textAlign: 'right' }}>INVESTED AMOUNT</th>
+                            <th style={{ textAlign: 'right' }}>CURRENT VALUE</th>
+                            <th style={{ textAlign: 'right' }}>UNREALIZED P&L</th>
+                            <th style={{ textAlign: 'right' }}>PORTFOLIO WT</th>
+                            <th style={{ textAlign: 'center', width: '130px' }}>ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {holdings.map(h => {
+                            const s = STOCK_MAP[h.symbol] || { price: h.avgPurchasePrice };
+                            const val = h.shares * s.price;
+                            const inv = h.totalCostBasis || (h.shares * h.avgPurchasePrice);
+                            const pl = val - inv;
+                            const plPct = inv > 0 ? (pl / inv) * 100 : 0;
+                            const isPos = pl >= 0;
+                            const wt = totalEquity > 0 ? (val / totalEquity) * 100 : 0;
+
+                            return (
+                              <tr key={h.symbol} className="table-row-hover">
+                                <td>
+                                  <div className="symbol-cell">
+                                    <span className="stock-ticker">{h.symbol}</span>
+                                    <span className="stock-company-name">{h.name}</span>
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{h.shares}</td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num text-secondary">{formatCurrency(h.avgPurchasePrice, currency)}</td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{formatCurrency(s.price, currency)}</td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num">{formatCurrency(inv, currency)}</td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num font-bold">{formatCurrency(val, currency)}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <span className={`delta-tag ${isPos ? 'delta-pos' : 'delta-neg'}`}>
+                                    {isPos ? '+' : ''}{formatCurrency(pl, currency)} ({formatPercent(plPct)})
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'right' }} className="tabular-num text-secondary">{wt.toFixed(1)}%</td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <div className="table-actions">
+                                    <button onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock: s })} className="btn-action btn-buy">Buy</button>
+                                    <button onClick={() => setTradeModal({ isOpen: true, mode: 'SELL', stock: s })} className="btn-action btn-sell">Sell</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="table-summary-row">
+                            <td colSpan="4"><span className="font-semibold">PORTFOLIO TOTALS ({holdings.length} Positions)</span></td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num font-bold">{formatCurrency(totalInvested, currency)}</td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num font-bold">{formatCurrency(totalHoldingsValue, currency)}</td>
+                            <td style={{ textAlign: 'right' }}>
+                              <span className={`delta-tag ${unrealizedPL >= 0 ? 'delta-pos' : 'delta-neg'}`}>
+                                {unrealizedPL >= 0 ? '+' : ''}{formatCurrency(unrealizedPL, currency)}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num font-bold">
+                              {totalEquity > 0 ? ((totalHoldingsValue / totalEquity) * 100).toFixed(1) : 0}%
+                            </td>
+                            <td />
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="empty-panel"><p>No active holdings. Use the Explore tab or click "+ Buy Stock".</p></div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 3: EXPLORE STOCKS */}
+            {currentPage === 'explore' && (
+              <div className="page-content">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">INDIAN EQUITIES SCREENER</h2>
+                    <span className="section-sub">National Stock Exchange (NSE) & BSE leading companies</span>
+                  </div>
+                  <button onClick={() => setCompareModalOpen(true)} className="btn-secondary btn-sm">
+                    ⚖️ Compare Stocks ({compareSymbols.length})
+                  </button>
+                </div>
+
+                <div className="panel screener-controls-panel">
+                  <div className="screener-top-row">
+                    <div className="filter-pill-group">
+                      <button onClick={() => setSearchQuery('')} className="filter-pill active">All Equities ({STOCKS.length})</button>
+                    </div>
+                    <div className="search-wrap-compact">
+                      <input
+                        type="text"
+                        placeholder="Search ticker, company..."
+                        className="search-input-compact"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <div className="table-responsive">
+                    <table className="financial-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '38px', textAlign: 'center' }}>★</th>
+                          <th>COMPANY & TICKER</th>
+                          <th>SECTOR</th>
+                          <th style={{ textAlign: 'right' }}>PRICE</th>
+                          <th style={{ textAlign: 'right' }}>1D CHANGE</th>
+                          <th style={{ width: '130px', textAlign: 'center' }}>52W RANGE</th>
+                          <th style={{ textAlign: 'right' }}>MARKET CAP</th>
+                          <th style={{ textAlign: 'right' }}>P/E</th>
+                          <th style={{ textAlign: 'center', width: '140px' }}>TRADE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {STOCKS.filter(s => !searchQuery || s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(stock => {
+                          const isPos = stock.change >= 0;
+                          const isSaved = watchlist.includes(stock.symbol);
+                          const holding = holdingsMap[stock.symbol];
+                          const sharesOwned = holding ? holding.shares : 0;
+                          const low = stock.low52 || stock.price * 0.75;
+                          const high = stock.high52 || stock.price * 1.25;
+                          const rangePct = Math.min(100, Math.max(0, ((stock.price - low) / (high - low)) * 100));
+
+                          return (
+                            <tr key={stock.symbol} onClick={() => setDetailStock(stock)} className="table-row-hover">
+                              <td
+                                style={{ textAlign: 'center', cursor: 'pointer' }}
+                                onClick={e => { e.stopPropagation(); handleToggleWatchlist(stock.symbol); }}
+                              >
+                                <span className={`star-icon ${isSaved ? 'star-active' : ''}`}>{isSaved ? '★' : '☆'}</span>
+                              </td>
+                              <td>
+                                <div className="symbol-cell">
+                                  <span className="stock-ticker">{stock.symbol}</span>
+                                  <span className="stock-company-name">{stock.name}</span>
+                                </div>
+                              </td>
+                              <td><span className="sector-tag">{stock.sector}</span></td>
+                              <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{formatCurrency(stock.price, currency)}</td>
+                              <td style={{ textAlign: 'right' }}>
+                                <span className={`delta-tag ${isPos ? 'delta-pos' : 'delta-neg'}`}>
+                                  {isPos ? '▲ +' : '▼ '}{formatPercent(stock.changePercent)}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="range-bar-wrap">
+                                  <div className="range-bar-track"><div className="range-bar-indicator" style={{ left: `${rangePct}%` }} /></div>
+                                  <div className="range-bar-labels">
+                                    <span>L: ₹{low.toFixed(0)}</span>
+                                    <span>H: ₹{high.toFixed(0)}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'right' }} className="tabular-num text-secondary">{stock.marketCap}</td>
+                              <td style={{ textAlign: 'right' }} className="tabular-num text-secondary">{stock.peRatio || '—'}</td>
+                              <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                <div className="table-actions">
+                                  <button onClick={() => setTradeModal({ isOpen: true, mode: 'BUY', stock })} className="btn-action btn-buy">Buy</button>
+                                  {sharesOwned > 0 && (
+                                    <button onClick={() => setTradeModal({ isOpen: true, mode: 'SELL', stock })} className="btn-action btn-sell">Sell ({sharesOwned})</button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 4: INSIGHTS */}
+            {currentPage === 'insights' && (
+              <div className="page-content">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">INVESTMENT INSIGHTS & LEARNING</h2>
+                    <span className="section-sub">Portfolio diagnostics, risk alerts, and financial education</span>
+                  </div>
+                </div>
+
+                <div className="panel" style={{ marginBottom: '1.25rem' }}>
+                  <div className="panel-header">
+                    <div>
+                      <h3 className="panel-title">PORTFOLIO DIAGNOSTICS</h3>
+                      <span className="panel-sub">Real-time risk evaluation from your active holdings</span>
+                    </div>
+                  </div>
+                  <div className="diagnostics-list">
+                    <div className="diagnostic-card diagnostic-info">
+                      <div className="diagnostic-header">
+                        <span className="diagnostic-tag">STATUS</span>
+                        <span className="diagnostic-title">Asset Allocation Analyzed</span>
+                      </div>
+                      <p className="diagnostic-text">
+                        You have {holdings.length} active stock positions with {formatCurrency(cashBalance, currency)} in liquid cash. Your diversification score is sound.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="panel" style={{ marginBottom: '1.25rem' }}>
+                  <div className="panel-header">
+                    <div>
+                      <h3 className="panel-title">EDUCATIONAL ARTICLES</h3>
+                      <span className="panel-sub">Equity fundamentals and risk management</span>
+                    </div>
+                  </div>
+                  <div className="articles-grid">
+                    {LEARNING_ARTICLES.map(art => (
+                      <div key={art.id} className="article-card">
+                        <div className="article-meta">
+                          <span className="category-tag">{art.category}</span>
+                          <span className="read-time">{art.readTime}</span>
+                        </div>
+                        <h4 className="article-title">{art.title}</h4>
+                        <p className="article-summary">{art.summary}</p>
+                        <div className="article-footer">
+                          <span className="difficulty-badge">Level: {art.difficulty}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <div className="panel-header">
+                    <div>
+                      <h3 className="panel-title">DAILY INVESTMENT WISDOM</h3>
+                      <span className="panel-sub">Practical rules of thumb from renowned investors</span>
+                    </div>
+                  </div>
+                  <div className="tips-list">
+                    {INVESTMENT_TIPS.map(tip => (
+                      <div key={tip.id} className="tip-row">
+                        <div className="tip-content">
+                          <div className="tip-tags">
+                            <span className="tip-category">{tip.category}</span>
+                            <span className="tip-tagline">{tip.tagline}</span>
+                          </div>
+                          <div className="tip-title">{tip.title}</div>
+                          <p className="tip-body">{tip.tip}</p>
+                          <div className="tip-takeaway"><strong>Rule:</strong> {tip.practicalTakeaway}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 5: TRANSACTIONS */}
+            {currentPage === 'transactions' && (
+              <div className="page-content">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">TRANSACTION HISTORY & AUDIT LEDGER</h2>
+                    <span className="section-sub">Immutable record of simulated orders, timestamps, and fees</span>
+                  </div>
+                </div>
+
+                <div className="stat-grid-4">
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Total Orders</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{transactions.length}</div></div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Buy Orders</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{transactions.filter(t => t.type === 'BUY').length}</div></div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Sell Orders</span></div>
+                    <div className="stat-card-body"><div className="stat-value">{transactions.filter(t => t.type === 'SELL').length}</div></div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-card-header"><span className="stat-title">Realized P&L</span></div>
+                    <div className="stat-card-body">
+                      <div className="stat-value" style={{ color: realizedProfitLoss >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
+                        {realizedProfitLoss >= 0 ? '+' : ''}{formatCurrency(realizedProfitLoss, currency)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <div className="table-toolbar">
+                    <div className="filter-pill-group">
+                      <button className="filter-pill active">All Orders ({transactions.length})</button>
+                    </div>
+                    <button onClick={() => exportCSV(transactions, `stockwise_transactions_${new Date().toISOString().split('T')[0]}.csv`, true)} className="btn-secondary btn-sm" disabled={transactions.length === 0}>
+                      Export Ledger (CSV)
+                    </button>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="financial-table">
+                      <thead>
+                        <tr>
+                          <th>TXN ID</th>
+                          <th>DATE & TIME</th>
+                          <th>ORDER TYPE</th>
+                          <th>COMPANY & TICKER</th>
+                          <th style={{ textAlign: 'right' }}>SHARES</th>
+                          <th style={{ textAlign: 'right' }}>EXEC. PRICE</th>
+                          <th style={{ textAlign: 'right' }}>FEES</th>
+                          <th style={{ textAlign: 'right' }}>NET AMOUNT</th>
+                          <th style={{ textAlign: 'center' }}>STATUS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map(txn => (
+                          <tr key={txn.id} className="table-row-hover">
+                            <td className="tabular-num text-muted font-mono">{txn.id}</td>
+                            <td className="text-secondary" style={{ fontSize: '0.8rem' }}>{formatDate(txn.date)}</td>
+                            <td>
+                              <span className={`order-badge ${txn.type === 'BUY' ? 'order-buy' : 'order-sell'}`}>{txn.type}</span>
+                            </td>
+                            <td>
+                              <div className="symbol-cell">
+                                <span className="stock-ticker">{txn.symbol}</span>
+                                <span className="stock-company-name">{txn.name}</span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num font-semibold">{txn.shares}</td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num">{formatCurrency(txn.price, currency)}</td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num text-muted">{formatCurrency(txn.fees, currency)}</td>
+                            <td style={{ textAlign: 'right' }} className="tabular-num font-bold">{formatCurrency(txn.totalAmount, currency)}</td>
+                            <td style={{ textAlign: 'center' }}><span className="status-executed-tag">{txn.status}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 6: SETTINGS */}
+            {currentPage === 'settings' && (
+              <div className="page-content" style={{ maxWidth: '850px' }}>
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">PLATFORM SETTINGS</h2>
+                    <span className="section-sub">Display preferences, currency formatting, and portfolio data controls</span>
+                  </div>
+                </div>
+
+                <div className="settings-stack">
+                  <div className="panel">
+                    <div className="panel-header">
+                      <div><h3 className="panel-title">USER PROFILE & SIMULATION ACCOUNT</h3></div>
+                    </div>
+                    <div className="settings-grid-3">
+                      <div className="settings-field">
+                        <span className="field-label">INVESTOR NAME</span>
+                        <span className="field-value">Alex Sharma</span>
+                      </div>
+                      <div className="settings-field">
+                        <span className="field-label">EMAIL ADDRESS</span>
+                        <span className="field-value">alex.sharma@stockwise.demo</span>
+                      </div>
+                      <div className="settings-field">
+                        <span className="field-label">ACCOUNT TYPE</span>
+                        <span className="field-value"><span className="badge-demo">Academic Simulator</span></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel">
+                    <div className="panel-header">
+                      <div><h3 className="panel-title">DISPLAY & FORMATTING</h3></div>
+                    </div>
+                    <div className="settings-rows">
+                      <div className="settings-row">
+                        <div>
+                          <div className="setting-name">Interface Theme</div>
+                          <div className="setting-desc">Clean white financial research theme or dark navy mode</div>
+                        </div>
+                        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="btn-secondary btn-sm">
+                          {theme === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
+                        </button>
+                      </div>
+                      <div className="settings-row">
+                        <div>
+                          <div className="setting-name">Display Currency</div>
+                          <div className="setting-desc">Indian Rupee (₹ INR) or US Dollar ($ USD)</div>
+                        </div>
+                        <button onClick={() => setCurrency(currency === 'INR' ? 'USD' : 'INR')} className="btn-secondary btn-sm">
+                          {currency === 'INR' ? '₹ INR (Indian Rupee)' : '$ USD (US Dollar)'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel">
+                    <div className="panel-header">
+                      <div><h3 className="panel-title">PORTFOLIO DATA & BACKUP</h3></div>
+                    </div>
+                    <div className="settings-rows">
+                      <div className="settings-row">
+                        <div>
+                          <div className="setting-name">Restore Demo Starter Portfolio</div>
+                          <div className="setting-desc">Resets to curated starter portfolio (4 active holdings, ₹24,675 cash)</div>
+                        </div>
+                        <button onClick={() => setResetModal('demo')} className="btn-secondary btn-sm">↺ Restore Demo Seed</button>
+                      </div>
+                      <div className="settings-row destructive-row">
+                        <div>
+                          <div className="setting-name text-danger">Reset to Fresh ₹1,00,000 Cash</div>
+                          <div className="setting-desc">Wipes active holdings and transaction history</div>
+                        </div>
+                        <button onClick={() => setResetModal('clean')} className="btn-danger btn-sm">⚠ Reset to Cash Only</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* 4. FOOTER */}
+          <footer className="site-footer">
+            <div className="footer-inner">
+              <div className="footer-left">
+                <span className="footer-brand font-semibold">StockWise</span>
+                <span className="footer-desc">· Indian Stock Market Portfolio Simulator & Research Platform</span>
+              </div>
+              <div className="footer-right">
+                <span className="footer-note">Simulated Market Data for Academic Evaluation</span>
+              </div>
+            </div>
+          </footer>
+
+          {/* 5. BUY / SELL MODAL */}
+          {tradeModal.isOpen && tradeModal.stock && (
+            <div className="modal-backdrop" onClick={() => setTradeModal({ isOpen: false, mode: 'BUY', stock: null })}>
+              <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                  <div className="modal-title-wrap">
+                    <span className={`modal-badge ${tradeModal.mode === 'BUY' ? 'order-buy' : 'order-sell'}`}>
+                      SIMULATED {tradeModal.mode} ORDER
+                    </span>
+                    <div className="modal-stock-title">
+                      <span className="stock-ticker">{tradeModal.stock.symbol}</span>
+                      <span className="stock-company-name">· {tradeModal.stock.name}</span>
+                    </div>
+                  </div>
+                  <button className="modal-close-btn" onClick={() => setTradeModal({ isOpen: false, mode: 'BUY', stock: null })}>✕</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="price-banner">
+                    <div className="price-banner-item">
+                      <span className="price-banner-label">MARKET PRICE</span>
+                      <span className="price-banner-val">{formatCurrency(tradeModal.stock.price, currency)}</span>
+                    </div>
+                    <div className="price-banner-item">
+                      <span className="price-banner-label">{tradeModal.mode === 'BUY' ? 'AVAILABLE CASH' : 'OWNED SHARES'}</span>
+                      <span className="price-banner-val">
+                        {tradeModal.mode === 'BUY' ? formatCurrency(cashBalance, currency) : `${holdingsMap[tradeModal.stock.symbol]?.shares || 0} Shares`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={e => {
+                    e.preventDefault();
+                    const qty = parseInt(e.target.shares.value, 10) || 1;
+                    if (tradeModal.mode === 'BUY') {
+                      handleExecuteBuy(tradeModal.stock, qty);
+                    } else {
+                      handleExecuteSell(tradeModal.stock, qty);
+                    }
+                  }}>
+                    <div className="form-group">
+                      <label className="form-label">Number of Shares:</label>
+                      <div className="share-input-wrap">
+                        <input type="number" name="shares" min="1" defaultValue="5" className="input-shares" required autoFocus />
+                        <span className="share-input-suffix">Shares</span>
+                      </div>
+                    </div>
+
+                    <div className="order-summary-box">
+                      <div className="summary-row">
+                        <span>Simulated Exchange Fee</span>
+                        <span className="tabular-num text-muted">+₹20.00</span>
+                      </div>
+                    </div>
+
+                    <div className="modal-footer">
+                      <button type="button" className="btn-secondary" onClick={() => setTradeModal({ isOpen: false, mode: 'BUY', stock: null })}>Cancel</button>
+                      <button type="submit" className={`btn-primary ${tradeModal.mode === 'SELL' ? 'btn-sell-primary' : ''}`}>
+                        Confirm & Place Order
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 6. RESET CONFIRMATION MODAL */}
+          {resetModal && (
+            <div className="modal-backdrop" onClick={() => setResetModal(null)}>
+              <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+                <div className="modal-header">
+                  <h3 className="modal-title">{resetModal === 'demo' ? 'Restore Demo Portfolio?' : 'Reset to ₹1,00,000 Cash?'}</h3>
+                  <button className="modal-close-btn" onClick={() => setResetModal(null)}>✕</button>
+                </div>
+                <div className="modal-body">
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {resetModal === 'demo'
+                      ? 'This will restore the standard evaluation demo portfolio with 4 active stocks and sample trade history.'
+                      : 'This will completely erase all current stock holdings and reset your cash balance to ₹1,00,000.00.'}
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={() => setResetModal(null)}>Cancel</button>
+                  <button
+                    className={resetModal === 'demo' ? 'btn-primary' : 'btn-danger'}
+                    onClick={() => {
+                      if (resetModal === 'demo') {
+                        setPortfolio(INITIAL_PORTFOLIO);
+                        addToast('info', 'Demo Restored', 'Starter portfolio restored.');
+                      } else {
+                        setPortfolio({
+                          cashBalance: 100000.00,
+                          initialCapital: 100000.00,
+                          realizedProfitLoss: 0.00,
+                          holdings: [],
+                          transactions: [],
+                          watchlist: ['RELIANCE', 'TCS', 'INFY']
+                        });
+                        addToast('info', 'Clean Slate', 'Reset to fresh ₹100,000 cash.');
+                      }
+                      setResetModal(null);
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 7. TOASTS */}
+          <div className="toast-box">
+            {toasts.map(t => (
+              <div key={t.id} className={`toast-notification toast-${t.type}`}>
+                <div className="toast-title">{t.title}</div>
+                <div className="toast-msg">{t.message}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
